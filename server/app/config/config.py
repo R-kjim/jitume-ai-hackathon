@@ -1,6 +1,10 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-env_file = ".env"
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+env_file = BASE_DIR / ".env"
+
 
 class Variable( BaseSettings):
     model_config = SettingsConfigDict (env_file= env_file, extra= "ignore")
@@ -18,5 +22,11 @@ class Variable( BaseSettings):
 
     # openai
     openai_api: str
+
+    postgres_host: str
+    postgres_port: int
+    postgres_name: str
+    postgres_user: str
+    postgres_password: str
 
 variables=Variable()
