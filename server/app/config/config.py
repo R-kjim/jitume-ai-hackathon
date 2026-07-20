@@ -29,4 +29,7 @@ class Variable( BaseSettings):
     postgres_user: str
     postgres_password: str
 
+    fathom_api_key:str
+    fathom_webhook_secret: str
+
 variables=Variable()
