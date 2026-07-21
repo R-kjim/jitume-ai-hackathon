@@ -1,10 +1,16 @@
+
 from fastapi import APIRouter
+
 from server.app.api import (
-    auth
+    auth,
+    conversation,
 )
 
 router = APIRouter()
 
-router.include_router(
-    auth.router, prefix="/auth"
-)
+router.include_router(auth.router)
+
+router.include_router(conversation.router)
+
+
+
