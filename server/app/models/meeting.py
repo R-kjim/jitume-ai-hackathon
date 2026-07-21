@@ -1,11 +1,8 @@
-#meeting.py defines the database model for storing meeting information. 
-# It represents the main meeting record that connects recordings, transcripts, conversations, and AI proposal generation.
-
 from datetime import datetime, timezone
 from enum import Enum as PyEnum
 
 from sqlalchemy import String, DateTime, Enum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from server.app.models.base import BaseModel
 
@@ -78,4 +75,11 @@ class Meeting(BaseModel):
         default=MeetingStatus.CREATED,
         nullable=False,
     )
-    
+
+    # Relationship with conversations
+    conversations: Mapped[list["Conversation"]] = relationship(
+        "Conversation",
+        back_populates="meeting",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )

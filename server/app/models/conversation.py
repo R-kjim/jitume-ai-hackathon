@@ -1,22 +1,23 @@
+# conversation.py
+# Defines the database model for storing meeting transcript conversations.
+# Each record represents one spoken segment in a meeting and tracks AI processing.
 
-#conversation.py defines the database model for storing meeting transcript conversations. 
-# It stores each spoken part of a meeting, links it to a meeting, and tracks AI processing progress.
+from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum as PyEnum
 from uuid import UUID as PyUUID
 
 from sqlalchemy import (
-    String,
+    Boolean,
     DateTime,
     Enum,
-    Text,
-    Boolean,
     Float,
     ForeignKey,
+    String,
+    Text,
     UUID,
 )
-
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from server.app.models.base import BaseModel
@@ -36,8 +37,7 @@ class ConversationStatus(PyEnum):
 class Conversation(BaseModel):
     __tablename__ = "conversations"
 
-
-    # Link transcript segment to meeting
+    # Meeting this conversation belongs to
     meeting_id: Mapped[PyUUID] = mapped_column(
         UUID,
         ForeignKey("meetings.id"),
@@ -45,28 +45,24 @@ class Conversation(BaseModel):
         index=True,
     )
 
-
-    # Order of speech in transcript
+    # Order of appearance in transcript
     sequence_number: Mapped[int] = mapped_column(
         nullable=False,
         index=True,
     )
 
-
-    # Speaker category
+    # Speaker type
     speaker: Mapped[SpeakerRole] = mapped_column(
         Enum(SpeakerRole),
         nullable=False,
         index=True,
     )
 
-
-    # Actual speaker name from Fathom/Whisper diarization
+    # Actual speaker name
     speaker_label: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
     )
-
 
     # Transcript text
     message: Mapped[str] = mapped_column(
@@ -74,35 +70,30 @@ class Conversation(BaseModel):
         nullable=False,
     )
 
-
-    # Confidence returned by transcription engine
+    # Confidence score from transcription engine
     confidence_score: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )
 
-
-    # AI-generated insights from this conversation segment
+    # AI-generated summary
     ai_summary: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
 
-
-    # Extracted requirements/entities
+    # AI-extracted entities/requirements
     ai_entities: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
 
-
-    # Indicates GPT/AI agent has processed this segment
+    # Whether AI has processed this segment
     ai_processed: Mapped[bool] = mapped_column(
         Boolean,
         default=False,
         nullable=False,
     )
-
 
     status: Mapped[ConversationStatus] = mapped_column(
         Enum(ConversationStatus),
@@ -111,8 +102,7 @@ class Conversation(BaseModel):
         index=True,
     )
 
-
-    # When this sentence was captured
+    # Time captured
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -120,10 +110,8 @@ class Conversation(BaseModel):
         index=True,
     )
 
-
-    # Optional relationship back to meeting
-    meeting = relationship(
+    # Relationship to Meeting
+    meeting: Mapped["Meeting"] = relationship(
         "Meeting",
-        back_populates="conversations"
+        back_populates="conversations",
     )
-    

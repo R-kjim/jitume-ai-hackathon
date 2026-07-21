@@ -1,7 +1,8 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import asyncio
 
-from server.app.core.websocket import websocket_manager
+from server.app.services.websocket_manager import websocket_manager
+
 
 router = APIRouter(
     prefix="/ws",
@@ -265,3 +266,4 @@ async def meeting_websocket(
                 "client_id": client_id,
             },
         )
+        
