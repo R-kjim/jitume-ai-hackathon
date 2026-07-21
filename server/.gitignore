@@ -1,5 +1,26 @@
+# .env
+# .venv
+# *.pyc
+# .git
+# ####
+
+# __pycache_
+
+# Python virtual environment
+.venv/
+
+# Git folder
+.git/
+
+# Environment variables / secrets
 .env
-.venv
+server/.env
+
+# Python cache
+__pycache__/
 *.pyc
-.git
-__pycache__
+
+# IDE files
+.vscode/
+.idea/__pycache__/
+*.pyc

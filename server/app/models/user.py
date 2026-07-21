@@ -1,11 +1,46 @@
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import declarative_base
+from enum import Enum as PyEnum
 
-Base = declarative_base()
+from sqlalchemy import Boolean, Enum, String
+from sqlalchemy.orm import Mapped, mapped_column
 
-class User(Base):
+from server.app.models.base import BaseModel
+
+
+class UserRole(PyEnum):
+    ADMIN = "Admin"
+    MANAGER = "Manager"
+    SALES_AGENT = "Sales Agent"
+    CLIENT = "Client"
+
+
+class User(BaseModel):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String(255), unique=True, nullable=False, index=True)
-    password = Column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(
+        String(150),
+        nullable=False,
+    )
+
+    email: Mapped[str] = mapped_column(
+        String(255),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+
+    password: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+    )
+
+    role: Mapped[UserRole] = mapped_column(
+        Enum(UserRole),
+        default=UserRole.CLIENT,
+        nullable=False,
+    )
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )

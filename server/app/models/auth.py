@@ -1,62 +1,43 @@
-from pydantic import EmailStr
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
-from server.app.models.base import BaseModel
+from server.app.config.session import get_async_db
+from server.app.models.user import User
+from server.app.schemas.auth import UserLoginPayload
 
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, DateTime, Boolean, Enum
-
-from datetime import datetime
-from typing import Optional
-
-import enum
-
-
-class UserRole(enum.Enum):
-    ADMIN = "Admin"
-    MANAGER = "Manager"
-    SALES_AGENT = "Sales Agent"
-    CLIENT = "Client"
+router = APIRouter(
+    prefix="/auth",
+    tags=["Authentication"]
+)
 
 
-
-class User(BaseModel):
-
-    __tablename__ = "users"
-
-    name: Mapped[str] = mapped_column(
-        String,
-        nullable=False
+@router.post("/login")
+async def login(
+    data: UserLoginPayload,
+    db: AsyncSession = Depends(get_async_db)
+):
+    result = await db.execute(
+        select(User).where(User.email == data.email)
     )
 
-    email: Mapped[EmailStr] = mapped_column(
-        String,
-        nullable=False,
-        unique=True,
-        index=True
-    )
+    user = result.scalar_one_or_none()
 
-    password: Mapped[str] = mapped_column(
-        String,
-        nullable=False
-    )
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
 
-    role: Mapped[UserRole] = mapped_column(
-        Enum(UserRole),
-        default=UserRole.CLIENT,
-        nullable=False
-    )
+    # TODO:
+    # Verify hashed password using passlib/bcrypt
+    # Generate JWT access token
 
-    is_active: Mapped[bool] = mapped_column(
-        Boolean,
-        default=True
-    )
-
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.utcnow
-    )
-
-    last_login: Mapped[Optional[datetime]] = mapped_column(
-        DateTime,
-        nullable=True
-    )
+    return {
+        "message": "Login successful",
+        "user": {
+            "id": str(user.id),
+            "email": user.email,
+            "role": user.role.value,
+        }
+    }
