@@ -1,3 +1,6 @@
+#user.py defines the database model for system users. 
+# It manages user accounts, authentication details, roles, and access control within the Jitume AI platform.
+
 from enum import Enum as PyEnum
 
 from sqlalchemy import Boolean, Enum, String

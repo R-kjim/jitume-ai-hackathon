@@ -1,3 +1,6 @@
+#meeting.py defines the database model for storing meeting information. 
+# It represents the main meeting record that connects recordings, transcripts, conversations, and AI proposal generation.
+
 from datetime import datetime, timezone
 from enum import Enum as PyEnum
 

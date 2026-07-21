@@ -1,3 +1,7 @@
+
+#conversation.py defines the database model for storing meeting transcript conversations. 
+# It stores each spoken part of a meeting, links it to a meeting, and tracks AI processing progress.
+
 from datetime import datetime, timezone
 from enum import Enum as PyEnum
 from uuid import UUID as PyUUID

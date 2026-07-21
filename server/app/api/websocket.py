@@ -1,71 +1,58 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from typing import Dict
-import json
 import asyncio
-import uuid
+
+from server.app.core.websocket import websocket_manager
 
 router = APIRouter(
     prefix="/ws",
-    tags=["WebSocket"]
+    tags=["WebSocket"],
 )
 
 
-class ConnectionManager:
+@router.websocket("/meetings/{meeting_id}")
+async def meeting_websocket(
+    websocket: WebSocket,
+    meeting_id: str,
+):
     """
-    Handles all active websocket connections.
+    WebSocket endpoint for a single meeting.
+
+    Flow
+
+    User
+        ↓
+    WebSocket
+        ↓
+    Meeting Room
+        ↓
+    Transcript
+        ↓
+    AI Summary
+        ↓
+    Proposal
     """
 
-    def __init__(self):
-        self.connections: Dict[str, WebSocket] = {}
+    client_id = await websocket_manager.connect(
+        websocket,
+        meeting_id,
+    )
 
-    async def connect(self, websocket: WebSocket):
-        """
-        Accept websocket connection.
-        """
-
-        await websocket.accept()
-
-        client_id = str(uuid.uuid4())
-
-        self.connections[client_id] = websocket
-
-        return client_id
-
-    def disconnect(self, client_id: str):
-
-        if client_id in self.connections:
-            del self.connections[client_id]
-
-    async def send(self, client_id: str, data: dict):
-
-        websocket = self.connections.get(client_id)
-
-        if websocket:
-
-            await websocket.send_json(data)
-
-    async def broadcast(self, data: dict):
-
-        for websocket in self.connections.values():
-
-            await websocket.send_json(data)
-
-
-manager = ConnectionManager()
-
-
-@router.websocket("/conversation")
-async def websocket_endpoint(websocket: WebSocket):
-
-    client_id = await manager.connect(websocket)
-
-    await manager.send(
+    await websocket_manager.send_personal_message(
         client_id,
         {
             "type": "connected",
-            "message": "Connected successfully",
-            "client_id": client_id
-        }
+            "client_id": client_id,
+            "meeting_id": meeting_id,
+            "message": "Connected successfully.",
+        },
+    )
+
+    await websocket_manager.broadcast_to_meeting(
+        meeting_id,
+        {
+            "type": "user_joined",
+            "client_id": client_id,
+        },
     )
 
     try:
@@ -75,168 +62,206 @@ async def websocket_endpoint(websocket: WebSocket):
             message = await websocket.receive_json()
 
             event = message.get("event")
-
             payload = message.get("payload")
 
-            ######################################################
-            # 1. Meeting Started
-            ######################################################
+            ##################################################
+            # Meeting Started
+            ##################################################
 
             if event == "meeting_started":
 
-                await manager.send(
-                    client_id,
+                await websocket_manager.broadcast_to_meeting(
+                    meeting_id,
                     {
-                        "type": "status",
-                        "message": "Meeting created."
-                    }
+                        "type": "meeting_started",
+                        "meeting_id": meeting_id,
+                    },
                 )
 
-            ######################################################
-            # 2. Audio Chunk
-            ######################################################
+            ##################################################
+            # Audio Chunk
+            ##################################################
 
             elif event == "audio_chunk":
 
-                await manager.send(
+                await websocket_manager.send_personal_message(
                     client_id,
                     {
-                        "type": "status",
-                        "message": "Audio received."
-                    }
+                        "type": "processing",
+                        "message": "Audio received.",
+                    },
                 )
 
                 """
                 TODO
 
-                Send audio chunk to Whisper Service
+                transcript = whisper_service.transcribe(payload)
 
-                transcript = whisper.transcribe(payload)
-
-                """
-
-            ######################################################
-            # 3. Transcript
-            ######################################################
-
-            elif event == "transcript":
-
-                transcript = payload
-
-                await manager.send(
-                    client_id,
+                await websocket_manager.broadcast_to_meeting(
+                    meeting_id,
                     {
                         "type": "transcript",
                         "text": transcript
                     }
                 )
-
-                """
-                Save transcript
-
-                conversation_service.save()
-
                 """
 
-            ######################################################
-            # 4. AI Summary
-            ######################################################
+            ##################################################
+            # Transcript
+            ##################################################
+
+            elif event == "transcript":
+
+                transcript = payload
+
+                """
+                TODO
+
+                Save Conversation
+
+                conversation_service.create(
+                    meeting_id=meeting_id,
+                    transcript=transcript
+                )
+                """
+
+                await websocket_manager.broadcast_to_meeting(
+                    meeting_id,
+                    {
+                        "type": "transcript",
+                        "text": transcript,
+                    },
+                )
+
+            ##################################################
+            # Generate Summary
+            ##################################################
 
             elif event == "generate_summary":
 
-                await manager.send(
+                await websocket_manager.send_personal_message(
                     client_id,
                     {
                         "type": "processing",
-                        "message": "Generating summary..."
-                    }
+                        "message": "Generating summary...",
+                    },
                 )
+
+                """
+                TODO
+
+                summary = ai_service.generate_summary(
+                    meeting_id
+                )
+                """
 
                 await asyncio.sleep(2)
 
-                summary = {
-
-                    "summary":
-                        "Meeting summary generated."
-
-                }
-
-                await manager.send(
+                await websocket_manager.send_personal_message(
                     client_id,
                     {
                         "type": "summary",
-                        "data": summary
-                    }
+                        "data": {
+                            "summary": "Meeting summary generated.",
+                        },
+                    },
                 )
 
-            ######################################################
-            # 5. Proposal
-            ######################################################
+            ##################################################
+            # Generate Proposal
+            ##################################################
 
             elif event == "generate_proposal":
 
-                await manager.send(
+                await websocket_manager.send_personal_message(
                     client_id,
                     {
                         "type": "processing",
-                        "message": "Generating proposal..."
-                    }
+                        "message": "Generating proposal...",
+                    },
                 )
+
+                """
+                TODO
+
+                proposal = proposal_service.generate(
+                    meeting_id
+                )
+                """
 
                 await asyncio.sleep(2)
 
-                proposal = {
-
-                    "title": "Business Proposal",
-
-                    "sections": [
-                        "Introduction",
-                        "Problem",
-                        "Solution",
-                        "Budget"
-                    ]
-                }
-
-                await manager.send(
+                await websocket_manager.send_personal_message(
                     client_id,
                     {
                         "type": "proposal",
-                        "data": proposal
-                    }
+                        "data": {
+                            "title": "Business Proposal",
+                            "sections": [
+                                "Introduction",
+                                "Problem",
+                                "Solution",
+                                "Budget",
+                            ],
+                        },
+                    },
                 )
 
-            ######################################################
-            # 6. Broadcast
-            ######################################################
+            ##################################################
+            # Meeting Broadcast
+            ##################################################
 
             elif event == "broadcast":
 
-                await manager.broadcast(
-
+                await websocket_manager.broadcast_to_meeting(
+                    meeting_id,
                     {
                         "type": "broadcast",
-                        "message": payload
-                    }
-
+                        "message": payload,
+                    },
                 )
 
-            ######################################################
+            ##################################################
+            # Meeting Statistics
+            ##################################################
+
+            elif event == "meeting_info":
+
+                participants = await websocket_manager.meeting_size(
+                    meeting_id
+                )
+
+                await websocket_manager.send_personal_message(
+                    client_id,
+                    {
+                        "type": "meeting_info",
+                        "participants": participants,
+                    },
+                )
+
+            ##################################################
 
             else:
 
-                await manager.send(
-
+                await websocket_manager.send_personal_message(
                     client_id,
-
                     {
                         "type": "error",
-                        "message": "Unknown event."
-                    }
-
+                        "message": "Unknown event.",
+                    },
                 )
 
     except WebSocketDisconnect:
 
-        manager.disconnect(client_id)
+        await websocket_manager.disconnect(
+            client_id,
+            meeting_id,
+        )
 
-        print(f"{client_id} disconnected.")
+        await websocket_manager.broadcast_to_meeting(
+            meeting_id,
+            {
+                "type": "user_left",
+                "client_id": client_id,
+            },
+        )

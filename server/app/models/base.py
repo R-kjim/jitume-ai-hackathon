@@ -1,3 +1,7 @@
+
+#base.py provides the foundation class for all SQLAlchemy database models. 
+# It defines common fields and configuration that are inherited by every table model.
+
 from datetime import datetime, timezone
 import uuid
 from uuid import UUID as PyUUID
