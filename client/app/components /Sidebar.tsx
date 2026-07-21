@@ -27,7 +27,7 @@ export const Sidebar: React.FC = () => {
           <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center text-xs">
             📑
           </div>
-          <span>Client Workflow</span>
+          <span>JITUME WORKFLOW </span>
         </div>
       </div>
 
