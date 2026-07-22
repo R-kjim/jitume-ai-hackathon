@@ -10,10 +10,10 @@ from fastapi import (
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from server.app.config.session import get_async_db
-from server.app.models.user import User, UserRole
-from server.app.schemas.auth import UserLoginPayload
-from server.app.schemas.user import (
+from app.config.session import get_async_db
+from app.models.user import User, UserRole
+from app.schemas.auth import UserLoginPayload
+from app.schemas.user import (
     UserCreate,
     UserUpdate,
     UserResponse,

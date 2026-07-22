@@ -1,47 +1,52 @@
 from logging.config import fileConfig
+import sys
+from pathlib import Path
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
+from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-from server.app.config.config import variables
 
-from server.app.models.base import Base
+# Add server folder to Python path
+SERVER_DIR = Path(__file__).resolve().parent.parent / "server"
+sys.path.append(str(SERVER_DIR))
 
-# Import models so Alembic can detect them
-from server.app.models.user import User
-from server.app.models.meeting import Meeting
-from server.app.models.conversation import Conversation
+
+# Import application config
+from app.config.config import variables
+
+# Import Base and models
+from app.models.base import BaseModel
+from app.models.user import User
+from app.models.meeting import Meeting
+from app.models.conversation import Conversation
 
 
 # Alembic Config object
 config = context.config
 
 
-# Setup logging
+# Logging configuration
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 
-# Metadata for autogenerate
-target_metadata = Base.metadata
+# Metadata for Alembic autogenerate
+target_metadata = BaseModel.metadata
 
 
-# Set database URL from application config
-if variables.database_url:
-    config.set_main_option(
-        "sqlalchemy.url",
-        variables.database_url
-    )
+# Use database URL from .env
+config.set_main_option(
+    "sqlalchemy.url",
+    variables.database_url
+)
+
 
 
 def run_migrations_offline() -> None:
-    """
-    Run migrations in offline mode.
-    """
 
-    url = config.get_main_option("sqlalchemy.url")
+    url = config.get_main_option(
+        "sqlalchemy.url"
+    )
 
     context.configure(
         url=url,
@@ -58,9 +63,6 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """
-    Run migrations in online mode.
-    """
 
     connectable = engine_from_config(
         config.get_section(
@@ -86,8 +88,10 @@ def run_migrations_online() -> None:
 
 
 if context.is_offline_mode():
+
     run_migrations_offline()
 
 else:
+
     run_migrations_online()
     

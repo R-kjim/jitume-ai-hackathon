@@ -1,7 +1,7 @@
 
 from fastapi import APIRouter
 
-from server.app.api import (
+from app.api import (
     auth,
     conversation,
     websocket,

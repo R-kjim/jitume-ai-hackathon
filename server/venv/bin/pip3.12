@@ -1,4 +1,4 @@
-#!/home/eng-kipngetich/tujitume/jitume-ai-hackathon/server/venv/bin/python3
+#!/home/eng-kipngetich/tujitume/jitume-ai-hackathon/server/venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from server.app.models.conversation import (
+from app.models.conversation import (
     SpeakerRole,
     ConversationStatus,
 )

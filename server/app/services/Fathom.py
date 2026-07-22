@@ -1,6 +1,6 @@
 import requests
 
-from server.app.config.config import variables
+from app.config.config import variables
 
 
 class FathomHandler():

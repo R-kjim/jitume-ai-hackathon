@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from server.app.models.meeting import (
+from app.models.meeting import (
     MeetingPlatform,
     MeetingStatus,
 )

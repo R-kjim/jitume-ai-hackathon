@@ -4,12 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from server.app.config.session import get_async_db
-from server.app.models.conversation import (
+from app.config.session import get_async_db
+from app.models.conversation import (
     Conversation,
     ConversationStatus,
 )
-from server.app.schemas.conversation import (
+from app.schemas.conversation import (
     ConversationCreate,
     ConversationUpdate,
 )

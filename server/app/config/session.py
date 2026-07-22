@@ -1,4 +1,4 @@
-from server.app.config.config import variables
+from app.config.config import variables
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
