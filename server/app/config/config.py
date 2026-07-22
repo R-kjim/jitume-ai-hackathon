@@ -32,4 +32,6 @@ class Variable( BaseSettings):
     fathom_api_key:str
     fathom_webhook_secret: str
 
+    n8n_url: str
+
 variables=Variable()
