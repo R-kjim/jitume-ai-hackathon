@@ -1,82 +1,22 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import (
-    auth,
-    websocket,
-    meeting,
-    conversation,
-)
+from server.app.api.route import router
+from server.app.services.Fathom import fathom_handler
 
+cors_allowed_origins = [ "http://localhost:3000", "http://localhost:5678"]
 
 app = FastAPI()
 
 
-# ============================
-# CORS CONFIGURATION
-# ============================
+app.include_router(router=router, prefix="/api")
 
+# fathom_handler.create_webhook()
+# Allow CORS for all origins
 app.add_middleware(
     CORSMiddleware,
-
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
-
+    allow_origins= cors_allowed_origins,
     allow_credentials=True,
-
-    allow_methods=[
-        "*"
-    ],
-
-    allow_headers=[
-        "*"
-    ],
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
 )
-
-
-
-# ============================
-# API ROUTES
-# ============================
-
-app.include_router(
-    auth.router,
-    prefix="/api"
-)
-
-app.include_router(
-    websocket.router,
-    prefix="/api"
-)
-
-app.include_router(
-    meeting.router,
-    prefix="/api"
-)
-
-app.include_router(
-    conversation.router,
-    prefix="/api"
-)
-
-
-
-# ============================
-# DEBUG ROUTES
-# ============================
-
-@app.on_event("startup")
-async def debug_routes():
-
-    print("\n========== FINAL APP ROUTES ==========")
-
-    for route in app.routes:
-        print(
-            getattr(route, "methods", None),
-            getattr(route, "path", None)
-        )
-
-    print("======================================")
-    

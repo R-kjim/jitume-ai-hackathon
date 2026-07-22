@@ -1,43 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from pydantic import EmailStr
 
-from app.config.session import get_async_db
-from app.models.user import User
-from app.schemas.auth import UserLoginPayload
+from server.app.models.base import BaseModel
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, DateTime, Boolean
+from datetime import datetime
+from typing import Optional
 
-router = APIRouter(
-    prefix="/auth",
-    tags=["Authentication"]
-)
+class User(BaseModel):
+    __tablename__="users"
 
-
-@router.post("/login")
-async def login(
-    data: UserLoginPayload,
-    db: AsyncSession = Depends(get_async_db)
-):
-    result = await db.execute(
-        select(User).where(User.email == data.email)
-    )
-
-    user = result.scalar_one_or_none()
-
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-
-    # TODO:
-    # Verify hashed password using passlib/bcrypt
-    # Generate JWT access token
-
-    return {
-        "message": "Login successful",
-        "user": {
-            "id": str(user.id),
-            "email": user.email,
-            "role": user.role.value,
-        }
-    }
+    email: Mapped[EmailStr] = mapped_column(String, nullable=False, index= True, unique=True)
+    password: Mapped[str] = mapped_column(String, nullable=False)

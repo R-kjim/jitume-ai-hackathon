@@ -1,245 +1,79 @@
-from uuid import UUID
+from  fastapi import APIRouter, Depends, HTTPException, Response, status
+from pydantic import EmailStr
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException,
-    status,
-)
-
-from sqlalchemy import select
+from server.app.config.session import get_async_db
+from server.app.models.auth import User
+from server.app.schemas.auth import UserLoginPayload
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.config.session import get_async_db
-from app.models.user import User, UserRole
-from app.schemas.auth import UserLoginPayload
-from app.schemas.user import (
-    UserCreate,
-    UserUpdate,
-    UserResponse,
-)
-
-router = APIRouter(
-    prefix="/auth",
-    tags=["Auth"],
-)
+from server.app.services.db import get_create_update_delete
+from server.app.config.config import variables
+from server.app.services.jwt import create_access_token, create_refresh_token
 
 
-# -------------------------
-# Login
-# -------------------------
+router = APIRouter()
 
-@router.post("/login")
-async def user_login(
-    data: UserLoginPayload,
-    db: AsyncSession = Depends(get_async_db),
-):
-    return {
-        "message": "Login endpoint reached",
-        "email": data.email,
-    }
+@router.get('/login',status_code=200)
+async def login(response:Response, db:AsyncSession=Depends(get_async_db)):
+    try:
+        # user= await get_create_update_delete.get_one(
+        #     db=db,
+        #     model=User,
+        #     filters={
+        #         "email":data.email
+        #     }
+        # )
+        # if not user:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_404_NOT_FOUND,
+        #         detail="User not found"
+        #     )
 
-
-# -------------------------
-# Create User
-# -------------------------
-
-@router.post(
-    "/",
-    response_model=UserResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_user(
-    payload: UserCreate,
-    db: AsyncSession = Depends(get_async_db),
-):
-
-    existing = await db.execute(
-        select(User).where(User.email == payload.email)
-    )
-
-    if existing.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Email already exists.",
+        access_token=await create_access_token(
+            data={
+                "user_id":"rkayjim@gmail.com"
+            }
+        )
+        refresh_token=await create_refresh_token(
+            data={
+                "user_id":"rkayjim@gmail.com"
+            }
+        )
+        response.set_cookie(
+            key="at_allow_me",
+            value=access_token["access_token"],
+            httponly=True,      
+            secure=True,        
+            samesite= "none",     
+            expires= access_token["expires_at"],        
+            path = "/",
+            domain= variables.auth_cookie_domain
         )
 
-    user = User(
-        name=payload.name,
-        email=payload.email,
-        password=payload.password,      # TODO: Hash password
-        role=payload.role,
-    )
-
-    db.add(user)
-
-    await db.commit()
-    await db.refresh(user)
-
-    return user
-
-
-# -------------------------
-# Get All Users
-# -------------------------
-
-@router.get(
-    "/",
-    response_model=list[UserResponse],
-)
-async def get_users(
-    db: AsyncSession = Depends(get_async_db),
-):
-
-    result = await db.execute(
-        select(User)
-    )
-
-    return result.scalars().all()
-
-
-# -------------------------
-# Get User
-# -------------------------
-
-@router.get(
-    "/{user_id}",
-    response_model=UserResponse,
-)
-async def get_user(
-    user_id: UUID,
-    db: AsyncSession = Depends(get_async_db),
-):
-
-    result = await db.execute(
-        select(User).where(User.id == user_id)
-    )
-
-    user = result.scalar_one_or_none()
-
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found.",
+        response.set_cookie(
+            key="rt_allow_me",
+            value=refresh_token["refresh_token"],
+            httponly=True,      
+            secure=True,        
+            samesite= "none",     
+            max_age=refresh_token["expires_at"],        
+            path = "/",
+            domain= variables.auth_cookie_domain
         )
-
-    return user
-
-
-# -------------------------
-# Update User
-# -------------------------
-
-@router.put(
-    "/{user_id}",
-    response_model=UserResponse,
-)
-async def update_user(
-    user_id: UUID,
-    payload: UserUpdate,
-    db: AsyncSession = Depends(get_async_db),
-):
-
-    result = await db.execute(
-        select(User).where(User.id == user_id)
-    )
-
-    user = result.scalar_one_or_none()
-
-    if user is None:
+        return
+    except HTTPException as e:
+        print(e)
+        raise e
+    
+    except ValueError as ve:
+        print(ve)
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found.",
+            status_code=status.HTTP_406_NOT_ACCEPTABLE,
+            detail=str(ve)
         )
-
-    update_data = payload.model_dump(exclude_unset=True)
-
-    for key, value in update_data.items():
-        setattr(user, key, value)
-
-    await db.commit()
-    await db.refresh(user)
-
-    return user
-
-
-# -------------------------
-# Delete User
-# -------------------------
-
-@router.delete(
-    "/{user_id}",
-    status_code=status.HTTP_200_OK,
-)
-async def delete_user(
-    user_id: UUID,
-    db: AsyncSession = Depends(get_async_db),
-):
-
-    result = await db.execute(
-        select(User).where(User.id == user_id)
-    )
-
-    user = result.scalar_one_or_none()
-
-    if user is None:
+    
+    except Exception as e:
+        print(e)
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found.",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Server Error Occurred"
         )
-
-    await db.delete(user)
-    await db.commit()
-
-    return {
-        "message": "User deleted successfully.",
-    }
-
-
-# -------------------------
-# Users By Role
-# -------------------------
-
-@router.get(
-    "/role/{role}",
-    response_model=list[UserResponse],
-)
-async def get_users_by_role(
-    role: UserRole,
-    db: AsyncSession = Depends(get_async_db),
-):
-
-    result = await db.execute(
-        select(User).where(User.role == role)
-    )
-
-    return result.scalars().all()
-
-
-# -------------------------
-# User By Email
-# -------------------------
-
-@router.get(
-    "/email/{email}",
-    response_model=UserResponse,
-)
-async def get_user_by_email(
-    email: str,
-    db: AsyncSession = Depends(get_async_db),
-):
-
-    result = await db.execute(
-        select(User).where(User.email == email)
-    )
-
-    user = result.scalar_one_or_none()
-
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found.",
-        )
-
-    return user
-
