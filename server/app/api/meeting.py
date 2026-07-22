@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config.session import get_async_db
-from app.models.meeting import Meeting
-from app.schemas.meeting import (
+from server.app.config.session import get_async_db
+from server.app.models.meeting import Meeting
+from server.app.schemas.meeting import (
     MeetingCreate,
     MeetingUpdate,
 )

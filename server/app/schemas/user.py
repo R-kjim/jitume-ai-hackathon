@@ -2,7 +2,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
 
-from app.models.user import UserRole
+from server.app.models.user import UserRole
 
 
 class UserCreate(BaseModel):

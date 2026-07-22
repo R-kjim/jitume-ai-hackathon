@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.models.meeting import (
+from server.app.models.meeting import (
     MeetingPlatform,
     MeetingStatus,
 )
@@ -15,6 +15,7 @@ class MeetingBase(BaseModel):
     client_name: str
     platform: MeetingPlatform = MeetingPlatform.GOOGLE_MEET
     meeting_link: Optional[str] = None
+
 
 
 class MeetingCreate(MeetingBase):

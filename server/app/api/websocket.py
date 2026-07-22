@@ -1,7 +1,7 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import asyncio
 
-from app.services.websocket_manager import websocket_manager
+from server.app.services.websocket_manager import websocket_manager
 
 
 router = APIRouter(
